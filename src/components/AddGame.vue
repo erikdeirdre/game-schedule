@@ -1,18 +1,14 @@
 <template>
+  <h2>Add Game</h2>
   <form @submit="submitForm" class="ui form">
     <div class="columns">
-      <div class="column is-one-fifth">
+      <div class="column">
         <div class="field">
-          <label class="label">Date</label>
+          <label class="label">Date/Time</label>
           <div class="control">
-            <input
-              class="input"
-              v-model="formFields.date"
-              type="text"
-              placeholder="game date"
-            />
+            <bulma_calendar v-model="formFields.dateTime" />
           </div>
-          <span style="color: red">{{ fieldErrors.date }}</span>
+          <span style="color: red">{{ fieldErrors.dateTime }}</span>
         </div>
       </div>
       <div class="column">
@@ -21,11 +17,11 @@
           <div class="control">
             <div class="select">
               <select v-model="formFields.coach">
-                <option value="0">select coach ...</option>
+                <option value="">select coach ...</option>
                 <option
                   v-for="coach in coaches"
                   :key="coach.id"
-                  :value="coach.id"
+                  :value="coach.name"
                 >
                   {{ coach.name }}
                 </option>
@@ -35,31 +31,17 @@
           <span style="color: red">{{ fieldErrors.coach }}</span>
         </div>
       </div>
-      <div class="column is-one-fifth">
-        <div class="field">
-          <label class="label">Time</label>
-          <div class="control">
-            <input
-              class="input"
-              v-model="formFields.time"
-              type="text"
-              placeholder="game time"
-            />
-          </div>
-          <span style="color: red">{{ fieldErrors.time }}</span>
-        </div>
-      </div>
       <div class="column">
         <div class="field">
           <label class="label">Field</label>
           <div class="control">
             <div class="select">
               <select v-model="formFields.field">
-                <option value="0">select field ...</option>
+                <option value="">select field ...</option>
                 <option
                   v-for="field in fields"
                   :key="field.id"
-                  :value="field.id"
+                  :value="field.name"
                 >
                   {{ field.name }}
                 </option>
@@ -82,27 +64,34 @@
 </template>
 
 <script>
+import bulma_calendar from "bulma-calendar/dist/components/vue/bulma_calendar.vue";
+//import bulmaCalendar from "~bulma-calendar/dist/js/bulma-calendar.min.js";
 export default {
   name: "AddGame",
   props: {
     msg: String,
   },
+  components: { bulma_calendar },
   data() {
     return {
       formFields: {
-        date: "",
-        time: "",
+        dateTime: "",
         coach: "",
         field: "",
       },
       fieldErrors: {
-        date: undefined,
-        time: undefined,
+        dateTime: undefined,
         coach: undefined,
         field: undefined,
       },
     };
   },
+  //mounted() {
+  //  const calendar = bulmaCalendar.attach(this.$refs.calendarTrigger, {
+  //    startDate: this.date,
+  //  })[0]
+  //  calendar.on("select", e => (this.date = e.start || null))
+  //},
   computed: {
     coaches() {
       return this.$store.getters.getCoachInfo;
@@ -114,34 +103,24 @@ export default {
   methods: {
     submitForm(evt) {
       evt.preventDefault();
+      console.log(evt);
+      console.log(this.formFields.dateTime);
       this.fieldErrors = this.validateForm(this.formFields);
       if (Object.keys(this.fieldErrors).length) return;
       this.$store.dispatch("addGame", this.formFields);
       this.resetValues();
     },
-    validateForm(formFields) {
-      const errors = {};
-      if (formFields.time) {
-        var time_test = this.validateTime(formFields.time);
-        if (time_test !== "") {
-          errors.time = this.validateTime(formFields.time);
-        }
-      } else {
-        errors.time = "Game Time Required";
-      }
-
-      if (formFields.date) {
-        if (!this.validateDate_MMDDYYYY(formFields.date)) {
-          errors.date = "Invalid Game Date. Format: MM/DD/YYYY";
-        }
-      } else {
-        errors.date = "Game Date Required";
-      }
-      if (!formFields.coach) errors.coach = "Coach Required";
-      if (!formFields.field) errors.field = "Field Name Required";
+    validateForm(fields) {
+      var errors = {};
+      console.log(fields.coach);
+      console.log(fields.dateTime);
+      console.log("here");
+      if (!fields.dateTime) errors.dateTime = "Game Date and Time Required";
+      if (!fields.coach) errors.coach = "Coach Required";
+      if (!fields.field) errors.field = "Field Name Required";
       return errors;
     },
-    validateDate_MMDDYYYY(input_date) {
+    validateDate_dateTime(input_date) {
       var parts = input_date.split(/[/\-.]/);
 
       if (parts.length < 3) return false;
@@ -149,40 +128,11 @@ export default {
       var dt = new Date(parts[2], parts[0] - 1, parts[1]);
       return dt && dt.getMonth() === parseInt(parts[0], 10) - 1;
     },
-    validateTime(input_time) {
-      var errorMsg = "";
-
-      // regular expression to match required time format
-      var re = /^(\d{1,2}):(\d{2})(:00)?([APap][Mm])?$/;
-      var regs = input_time.match(re);
-      if (regs) {
-        if (regs[4]) {
-          // 12-hour time format with am/pm
-          if (regs[1] < 1 || regs[1] > 12) {
-            errorMsg = "Invalid value for hours: " + regs[1];
-          }
-        } else {
-          // 24-hour time format
-          if (regs[1] > 23) {
-            errorMsg = "Invalid value for hours: " + regs[1];
-          }
-        }
-        if (!errorMsg && regs[2] > 59) {
-          errorMsg = "Invalid value for minutes: " + regs[2];
-        }
-      } else {
-        errorMsg = "Invalid time format: " + input_time + "Format: HH:MMAM/PM";
-      }
-
-      return errorMsg;
-    },
     resetValues() {
       this.formFields.date = "";
-      this.formFields.time = "";
       this.formFields.coach = "";
       this.formFields.field = "";
       this.fieldErrors.date = undefined;
-      this.fieldErrors.time = undefined;
       this.fieldErrors.coach = undefined;
       this.fieldErrors.field = undefined;
     },

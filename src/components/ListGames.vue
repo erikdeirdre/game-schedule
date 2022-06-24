@@ -10,11 +10,11 @@
               <div class="control has-text-right">
                 <div class="select">
                   <select v-model="coach_filter">
-                    <option value="0">filter coach ...</option>
+                    <option value="">All</option>
                     <option
                       v-for="coach in coaches"
                       :key="coach.id"
-                      :value="coach.id"
+                      :value="coach.name"
                     >
                       {{ coach.name }}
                     </option>
@@ -27,12 +27,12 @@
               Field
               <div class="control">
                 <div class="select">
-                  <select v-model="time_filter">
-                    <option value="0">filter field ...</option>
+                  <select v-model="field_filter">
+                    <option value="">All</option>
                     <option
                       v-for="field in fields"
                       :key="field.id"
-                      :value="field.id"
+                      :value="field.name"
                     >
                       {{ field.name }}
                     </option>
@@ -42,7 +42,7 @@
             </th>
           </tr>
         </thead>
-        <tr v-for="game in games" :key="game.id">
+        <tr v-for="game in filteredGames" :key="game.id">
           <td>{{ game.date }}</td>
           <td>{{ game.coach }}</td>
           <td>{{ game.time }}</td>
@@ -61,13 +61,27 @@ export default {
   },
   data() {
     return {
-      filtered_coach: "0",
-      filtered_time: "0",
+      coach_filter: "",
+      field_filter: "",
     };
   },
   computed: {
-    games() {
-      return this.$store.getters.getGameInfo;
+    filteredGames() {
+      let temp = this.$store.getters.getGameInfo;
+
+      if (this.coach_filter != "" && this.coach_filter) {
+        temp = temp.filter((item) => {
+          return item.coach === this.coach_filter;
+        });
+      }
+
+      if (this.field_filter != "" && this.field_filter) {
+        temp = temp.filter((item) => {
+          return item.field === this.field_filter;
+        });
+      }
+
+      return temp;
     },
     coaches() {
       return this.$store.getters.getCoachInfo;
