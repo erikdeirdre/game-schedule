@@ -65,7 +65,6 @@
 
 <script>
 import bulma_calendar from "bulma-calendar/dist/components/vue/bulma_calendar.vue";
-//import bulmaCalendar from "~bulma-calendar/dist/js/bulma-calendar.min.js";
 export default {
   name: "AddGame",
   props: {
@@ -75,7 +74,7 @@ export default {
   data() {
     return {
       formFields: {
-        dateTime: "",
+        dateTime: null,
         coach: "",
         field: "",
       },
@@ -86,18 +85,18 @@ export default {
       },
     };
   },
-  //mounted() {
-  //  const calendar = bulmaCalendar.attach(this.$refs.calendarTrigger, {
-  //    startDate: this.date,
-  //  })[0]
-  //  calendar.on("select", e => (this.date = e.start || null))
-  //},
   computed: {
     coaches() {
       return this.$store.getters.getCoachInfo;
     },
     fields() {
       return this.$store.getters.getFieldInfo;
+    },
+    displayDate() {
+      console.log(this.formFields.dateTime);
+      if (!this.formFields.dateTime[0] || !this.formFields.dateTime[1])
+        return "- n/a -";
+      return this.formFields.dateTime[0] + " to " + this.formFields.dateTime[1];
     },
   },
   methods: {
@@ -114,6 +113,7 @@ export default {
       var errors = {};
       console.log(fields.coach);
       console.log(fields.dateTime);
+      console.log(this.displayDate());
       console.log("here");
       if (!fields.dateTime) errors.dateTime = "Game Date and Time Required";
       if (!fields.coach) errors.coach = "Coach Required";
