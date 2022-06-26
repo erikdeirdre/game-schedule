@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "../views/HomeView.vue";
-import Test2Calendar from "../components/Test2Calendar.vue";
+import Test3Calendar from "../components/Test3Calendar.vue";
 
 const routes = [
   {
@@ -11,7 +11,7 @@ const routes = [
   {
     path: "/test",
     name: "test",
-    component: Test2Calendar,
+    component: Test3Calendar,
   },
   {
     path: "/about",
