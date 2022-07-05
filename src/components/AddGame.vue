@@ -6,7 +6,12 @@
         <div class="field">
           <label class="label">Date/Time</label>
           <div class="control">
-            <bulma_calendar v-model="formFields.dateTime" />
+            <flat-pickr
+              v-model="formFields.dateTime"
+              :config="options"
+              class="input"
+            >
+            </flat-pickr>
           </div>
           <span style="color: red">{{ fieldErrors.dateTime }}</span>
         </div>
@@ -64,18 +69,22 @@
 </template>
 
 <script>
-import bulma_calendar from "bulma-calendar/dist/components/vue/bulma_calendar.vue";
-//import bulmaCalendar from "~bulma-calendar/dist/js/bulma-calendar.min.js";
+import flatPickr from "vue-flatpickr-component";
+import "flatpickr/dist/flatpickr.css";
 export default {
   name: "AddGame",
   props: {
     msg: String,
   },
-  components: { bulma_calendar },
+  components: { flatPickr },
   data() {
     return {
+      options: {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+      },
       formFields: {
-        dateTime: "",
+        dateTime: null,
         coach: "",
         field: "",
       },
@@ -86,12 +95,6 @@ export default {
       },
     };
   },
-  //mounted() {
-  //  const calendar = bulmaCalendar.attach(this.$refs.calendarTrigger, {
-  //    startDate: this.date,
-  //  })[0]
-  //  calendar.on("select", e => (this.date = e.start || null))
-  //},
   computed: {
     coaches() {
       return this.$store.getters.getCoachInfo;
@@ -103,8 +106,6 @@ export default {
   methods: {
     submitForm(evt) {
       evt.preventDefault();
-      console.log(evt);
-      console.log(this.formFields.dateTime);
       this.fieldErrors = this.validateForm(this.formFields);
       if (Object.keys(this.fieldErrors).length) return;
       this.$store.dispatch("addGame", this.formFields);
@@ -112,27 +113,22 @@ export default {
     },
     validateForm(fields) {
       var errors = {};
-      console.log(fields.coach);
-      console.log(fields.dateTime);
-      console.log("here");
-      if (!fields.dateTime) errors.dateTime = "Game Date and Time Required";
+      if (!fields.dateTime || !this.validateDate_dateTime(fields.dateTime))
+        errors.dateTime = "Game Date and Time Required";
       if (!fields.coach) errors.coach = "Coach Required";
       if (!fields.field) errors.field = "Field Name Required";
       return errors;
     },
-    validateDate_dateTime(input_date) {
-      var parts = input_date.split(/[/\-.]/);
-
-      if (parts.length < 3) return false;
-
-      var dt = new Date(parts[2], parts[0] - 1, parts[1]);
-      return dt && dt.getMonth() === parseInt(parts[0], 10) - 1;
+    validateDate_dateTime(input_dt) {
+      var parts = input_dt.split(/[/\-. :]/);
+      if (parts.length < 5) return false;
+      return new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4]);
     },
     resetValues() {
-      this.formFields.date = "";
+      this.formFields.dateTime = "";
       this.formFields.coach = "";
       this.formFields.field = "";
-      this.fieldErrors.date = undefined;
+      this.fieldErrors.dateTime = undefined;
       this.fieldErrors.coach = undefined;
       this.fieldErrors.field = undefined;
     },

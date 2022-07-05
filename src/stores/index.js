@@ -34,58 +34,20 @@ const state = {
   game_info: [
     {
       id: 1,
-      date: "05/14/2022",
-      time: "08:00AM",
+      dateTime: "2012-04-23T18:25:43+00:00",
       coach: "Homer",
       field: "Forge Pond Field One",
     },
     {
       id: 2,
-      date: "05/14/2022",
-      time: "09:30AM",
+      dateTime: "2012-04-23T18:25:43+00:00",
       coach: "Marge",
       field: "Forge Pond Field One",
     },
     {
       id: 3,
-      date: "05/14/2022",
-      time: "08:00AM",
+      dateTime: "2012-04-23T18:25:43.000Z",
       coach: "Marge",
-      field: "Forge Pond Field Two",
-    },
-    {
-      id: 4,
-      date: "05/14/2022",
-      time: "09:30AM",
-      coach: "Homer",
-      field: "Forge Pond Field Two",
-    },
-    {
-      id: 5,
-      date: "05/21/2022",
-      time: "08:00AM",
-      coach: "Homer",
-      field: "Forge Pond Field One",
-    },
-    {
-      id: 6,
-      date: "05/21/2022",
-      time: "09:30AM",
-      coach: "Marge",
-      field: "Forge Pond Field One",
-    },
-    {
-      id: 7,
-      date: "05/21/2022",
-      time: "08:00AM",
-      coach: "Marge",
-      field: "Forge Pond Field Two",
-    },
-    {
-      id: 8,
-      date: "05/21/2022",
-      time: "09:30AM",
-      coach: "Homer",
       field: "Forge Pond Field Two",
     },
   ],
@@ -99,16 +61,30 @@ const getters = {
 };
 
 export default defineStore({
-  state,
-  getters,
+  state: () => {
+    return state;
+  },
+  getters: {
+    getGameInfo() {
+      return state.game_info
+    },
+    getFieldInfo() {
+      return state.field_info
+    },
+    getCoachInfo() {
+      return state.coach_info
+    },
+    getGameCount() {
+      return state.game_info.length
+    }
+  },
   actions: {
     addGame(payload) {
       let newGame = {
-        date: payload.date,
-        time: payload.time,
+        dateTime: payload.dateTime,
         coach: payload.coach,
         field: payload.field,
-        id: state.game_info.length + 1,
+        id: payload.id,
       };
       state.game_info.push(newGame);
     },
