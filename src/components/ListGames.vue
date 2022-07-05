@@ -43,9 +43,9 @@
           </tr>
         </thead>
         <tr v-for="game in filteredGames" :key="game.id">
-          <td>{{ game.date }}</td>
+          <td>{{ splitDateTime(game.dateTime)[0] }}</td>
           <td>{{ game.coach }}</td>
-          <td>{{ game.time }}</td>
+          <td>{{ splitDateTime(game.dateTime)[1] }}</td>
           <td>{{ game.field }}</td>
         </tr>
       </table>
@@ -64,6 +64,12 @@ export default {
       coach_filter: "",
       field_filter: "",
     };
+  },
+  methods: {
+    splitDateTime(dt_string) {
+      const dt = new Date(dt_string);
+      return [dt.toLocaleDateString(), dt.toLocaleTimeString()];
+    },
   },
   computed: {
     filteredGames() {

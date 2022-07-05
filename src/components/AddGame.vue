@@ -113,7 +113,6 @@ export default {
     },
     validateForm(fields) {
       var errors = {};
-      console.log(fields.dateTime);
       if (!fields.dateTime || !this.validateDate_dateTime(fields.dateTime))
         errors.dateTime = "Game Date and Time Required";
       if (!fields.coach) errors.coach = "Coach Required";
@@ -121,13 +120,9 @@ export default {
       return errors;
     },
     validateDate_dateTime(input_dt) {
-      console.log(input_dt);
-      var parts = input_dt.split(/[/\-.]/);
-
-      if (parts.length < 3) return false;
-
-      var dt = new Date(parts[2], parts[0] - 1, parts[1]);
-      return dt && dt.getMonth() === parseInt(parts[0], 10) - 1;
+      var parts = input_dt.split(/[/\-. :]/);
+      if (parts.length < 5) return false;
+      return new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4]);
     },
     resetValues() {
       this.formFields.dateTime = "";
