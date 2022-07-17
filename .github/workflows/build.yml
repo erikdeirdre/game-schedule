@@ -1,0 +1,141 @@
+# The flow is:
+#  - all branches:
+#  
+#    - install dependencices
+#      - lint code
+#      - run tests
+#      - publish test results
+#      - build docker image
+#      - scan docker image for vulnerabilities
+#  - master branch: Includes all the steps above
+#      - checks to see if VERSION file was increment, if not increments
+#        and pushes the file to master
+#      - push the docker image to Docker Hub
+#      - notify 'helm' repo of the changes
+
+name: build
+
+on: 
+  push:
+    paths-ignore:
+#    - '.github/workflows/**'
+    - 'README.md'
+    - 'hooks/**'
+    
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 0
+
+    - name: Configure Job
+      run: |
+        git config user.name "$GITHUB_ACTOR"
+        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+        echo "VERSION_CHANGE=0" >> $GITHUB_ENV
+
+    - name: Build image
+      run: |
+        docker build . --tag "{{ secrets.DOCKER_REPO }}:${{ env.VERSION }}"
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: '{{ secrets.DOCKER_REPO }}:${{ env.VERSION }}'
+        format: 'template'
+        template: '@/contrib/sarif.tpl'
+        exit-code: '0'
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v1
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+# Following logic updates the value in VERSION automatically, on 'master'
+# Assume since the developer didn't change the version then this is a minor change.
+# Increment by one, and set patch to 0. 
+    - name: Increment Version - if same as prior commit
+      if: github.ref == 'refs/heads/master'
+      run: |
+        DIFF=$(git diff HEAD^ HEAD VERSION)
+        if [[ -z "$DIFF" ]]; then
+          IFS='.'; read -r -a array <<< "$(cat VERSION)"
+          CNT=$((${array[1]} + 1))
+          echo "${array[0]}.${CNT}.0" >VERSION
+          echo "VERSION_CHANGE=1" >> $GITHUB_ENV
+        fi
+
+    - name: Commit Updated Version File
+      if: env.VERSION_CHANGE == 1 && github.ref == 'refs/heads/master' 
+      run: |
+        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+        git config --local user.name ${GITHUB_ACTOR}
+        git add VERSION
+        git commit -m "Updated VERSION file"
+
+    - name: Push changes to master
+      if: env.VERSION_CHANGE == 1 && github.ref == 'refs/heads/master'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        force: true
+
+    - name: Increment Version - if same as prior commit
+      if: github.ref == 'refs/heads/main'
+      run: |
+        VERSION_CHANGE=$(${GITHUB_WORKSPACE}/.github/workflows/diff_script.sh)
+        echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+        echo "VERSION_CHANGE=$VERSION_CHANGE" >> $GITHUB_ENV
+
+    - name: Version for Non-Main branches
+      if: github.ref != 'refs/heads/main'
+      run: |
+        echo "VERSION=${{ github.ref }}-$(cat VERSION)" >> $GITHUB_ENV
+  
+    - name: Commit Updated Version File
+      if: env.VERSION_CHANGE == 1 && github.ref == 'refs/heads/main'
+      uses: EndBug/add-and-commit@v7.4.0
+      with:
+        add: 'VERSION'
+        message: 'Updated VERSION file'
+
+    - name: Set Tag Name
+      if: github.ref == 'refs/heads/main'
+      run: |
+        TAG=v$(cat VERSION)
+        git tag $TAG
+        git push origin --tags
+
+    - name: Build image 
+      run: |
+        docker build . --tag "${{ secrets.DOCKER_REPO }}:${{ env.VERSION }}"
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: '${{ secrets.DOCKER_REPO }}:${{ env.VERSION }}'
+        format: 'template'
+        template: '@/contrib/sarif.tpl'
+        ignore-unfixed: true
+        severity: 'LOW,MEDIUM,HIGH,CRITICAL'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v1
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Publish to Registry
+      if: github.ref == 'refs/heads/master'
+      run: |
+        docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_TOKEN }}
+        docker tag {{ secrets.DOCKER_REPO }}:${{ env.VERSION }} {{ secrets.DOCKER_REPO }}:latest
+        docker push {{ secrets.DOCKER_REPO }}:latest
+        docker push {{ secrets.DOCKER_REPO }}:${{ env.VERSION }}

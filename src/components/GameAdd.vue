@@ -72,7 +72,7 @@
 import flatPickr from "vue-flatpickr-component";
 import "flatpickr/dist/flatpickr.css";
 export default {
-  name: "AddGame",
+  name: "GameAdd",
   props: {
     msg: String,
   },

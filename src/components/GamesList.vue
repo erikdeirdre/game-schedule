@@ -42,27 +42,84 @@
             </th>
           </tr>
         </thead>
-        <tr v-for="game in filteredGames" :key="game.id">
-          <td>{{ splitDateTime(game.dateTime)[0] }}</td>
-          <td>{{ game.coach }}</td>
-          <td>{{ splitDateTime(game.dateTime)[1] }}</td>
-          <td>{{ game.field }}</td>
-        </tr>
+        <ApolloQuery
+          :query="
+            (gql) => gql`
+              query allFields {
+                allFields {
+                  edges {
+                    node {
+                      id
+                      name
+                      address {
+                        address1
+                        state
+                        city
+                        zipCode
+                      }
+                    }
+                  }
+                }
+              }
+            `
+          "
+          :update="(data) => data.allGames.edges"
+        >
+          <template v-slot="{ result: { data } }">
+            <ul v-if="data.length">
+              <tr v-for="game in data" :key="game.id">
+                <td class="has-text-left">
+                  {{ splitDateTime(node.game.dateTime)[0] }}
+                </td>
+                <td class="has-text-left">{{ node.game.coaches.firstName }}</td>
+                <td class="has-text-left">
+                  {{ splitDateTime(node.game.gameDt)[1] }}
+                </td>
+                <td class="has-text-left">{{ node.game.field.name }}</td>
+              </tr>
+            </ul>
+            <div v-else class="empty">No Games match your search</div>
+          </template>
+        </ApolloQuery>
       </table>
     </div>
   </div>
 </template>
 
 <script>
+import { GET_GAMES } from "@/graphql/queries";
+//import { useQuery, useResult } from "@vue/apollo-composable";
+//import CoachesQuery from "@/graphql/CoachesQuery";
+//import GamesQuery from "CoachesQuery";
+//import FieldsQuery from "@/graphql/FieldsQuery";
+
 export default {
-  name: "ListGames",
+  name: "GamesList",
   props: {
     msg: String,
   },
+  apollo: {
+    allGames: {
+      query: GET_GAMES,
+      loadingKey: "loadingGames",
+    },
+  },
+  setup() {
+    //const { resultCoaches, loadingCoaches, errorCoaches, refetch: refetchCoaches } = useQuery(CoachesQuery);
+    //const coaches = useResult(resultCoaches);
+    //const { resultGames, loadingGames, errorGames } = useQuery(GamesQuery);
+    //const games = useResult(resultGames);
+    //const { resultFields, loadingFields, errorFields, refetch: refetchFields } = useQuery(FieldsQuery);
+    //const fields = useResult(resultFields);
+  },
   data() {
     return {
+      query: GET_GAMES,
       coach_filter: "",
       field_filter: "",
+      allGames: "",
+      loading: "",
+      errorGames: [],
     };
   },
   methods: {

@@ -1,0 +1,10 @@
+.git
+node_modules
+dist
+.vscode
+hooks
+.editorconfig
+.gitignore
+.idea
+README.md
+LICENSE

@@ -7,8 +7,8 @@
 
 <script>
 // @ is an alias to /src
-import AddGame from "@/components/AddGame.vue";
-import ListGames from "@/components/ListGames.vue";
+import AddGame from "@/components/GameAdd.vue";
+import ListGames from "@/components/GamesList.vue";
 
 export default {
   name: "HomeView",
